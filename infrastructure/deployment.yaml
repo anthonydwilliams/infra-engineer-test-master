@@ -47,8 +47,11 @@ spec:
                 memory: "100Mi"
                 cpu: "0.5"
         env:
-        - name: POSTGRESS_DB_HOSTNAME
-          value: mycar.postgress_sql.db
+        - name: POSTGRES_DB_HOSTNAME
+          valueFrom:
+            secretKeyRef:
+              name: db_information
+              key: hostname
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:

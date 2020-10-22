@@ -1,7 +1,7 @@
 apiVersion:  apps/v1
 kind: Deployment
 metadata:
-  name: postgress
+  name: postgres
   labels:
     app: air-quality-api
   namespace: a-q-api
@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       app: air-quality-api
-      tier: postgress
+      tier: postgres
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -19,11 +19,11 @@ spec:
     metadata:
       labels:
         app: air-quality-api
-        tier: postgress
+        tier: postgres
     spec:
       containers:
       - image: postgres:alpine
-        name: postgress_container
+        name: postgres_container
         env:
         - name: DB_PASSWORD
           valueFrom:
@@ -33,9 +33,9 @@ spec:
         ports:
         - containerPort: 5432
         volumeMounts:
-        - name: postgress-volume
+        - name: postgres-volume
           mountPath: "/var/lib/postgresql/data"
       volumes:
-      - name: postgress-volume
+      - name: postgres-volume
         persistentVolumeClaim:
           claimName: postgres-pv-claim
