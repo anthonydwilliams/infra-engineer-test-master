@@ -1,0 +1,41 @@
+apiVersion:  apps/v1
+kind: Deployment
+metadata:
+  name: postgress
+  labels:
+    app: air-quality-api
+  namespace: a-q-api
+spec:
+  selector:
+    matchLabels:
+      app: air-quality-api
+      tier: postgress
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+        maxSurge: 2
+        maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: air-quality-api
+        tier: postgress
+    spec:
+      containers:
+      - image: postgres:alpine
+        name: postgress_container
+        env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db_information
+              key: password
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgress-volume
+          mountPath: "/var/lib/postgresql/data"
+      volumes:
+      - name: postgress-volume
+        persistentVolumeClaim:
+          claimName: postgres-pv-claim
