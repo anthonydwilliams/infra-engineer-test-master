@@ -1,0 +1,61 @@
+image:
+  repository: 987097652435.dkr.ecr.eu-west-1.amazonaws.com/infra-engineer-test-master_api
+  tag: latest
+  pullPolicy: Always
+
+networking:
+  dns: air-quality-api.mycar.co.uk # Endpoint for service
+  ingressClass: nginx-air_quality_api
+  serviceType: NodePort
+  tls:
+    clusterIssuer: "letsencrypt-dns-prod"
+
+fullnameOverride: air-quality-api
+
+application:
+  port: 5000 # Port the application inside the container runs on.
+  live:
+    path: "/health"
+    periodSeconds: 60
+  ready:
+    path: "/health"
+    periodSeconds: 60
+  env: 'prod'
+  memory:
+    request: "512"
+    limit: "1G"
+  cpu:
+    request: "0.5"
+    limit: "1"
+  scaling:
+    minReplicas: 2
+    maxReplicas: 8
+    cpuAverage: 80
+    memoryAverage: 90
+
+# Label attributes
+# These labels are added AS IS to each kubernetes object to enable fine grained billing
+global:
+  labels:
+    creator: "anthony" 
+    name: "air_quality_api" 
+    project: "infra-engineer-test"
+
+nginx-ingress:
+  rbac:
+    create: true
+  serviceAccount:
+    create: true
+  controller:
+    replicaCount: 3
+    publishService:
+      enabled: true
+    metrics:
+      enabled: true
+    ingressClass: nginx-air_quality_api
+    scope:
+      enabled: true
+      namespace: # Needs to be linked to the namespace used during the deploy
+    service:
+      enableHttp: false
+      externalTrafficPolicy: Local

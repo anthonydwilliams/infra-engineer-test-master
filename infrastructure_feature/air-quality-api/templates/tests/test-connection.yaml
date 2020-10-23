@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "air-quality-api.fullname" . }}-test-connection"
+  labels:
+{{ include "air-quality-api.labels" . | indent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args:  ['{{ include "air-quality-api.fullname" . }}:{{ .Values.service.port }}']
+  restartPolicy: Never

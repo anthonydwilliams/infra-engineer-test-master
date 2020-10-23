@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+{{- if .Values.global.labels }}
+{{ toYaml .Values.global.labels | indent 4 }}
+{{- end }}
+spec:
+  replicas: {{ .Values.application.scaling.minReplicas }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
+  template:
+    metadata:
+      labels:
+        date: "{{ .Release.Time.Seconds }}"
+        app: {{ template "fullname" . }}
+{{- if .Values.global.labels }}
+{{ toYaml .Values.global.labels | indent 8 }}
+{{- end }}
+    spec:
+      containers:
+      - name: {{ template "fullname" . }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: ENVIRONMENT
+          value: {{ .Values.application.env }}
+        - name: BUILD_VERSION
+          value: {{ .Values.image.tag}}
+        resources:
+          requests:
+            memory: {{ .Values.application.memory.request }}
+            cpu: {{ .Values.application.cpu.request }}
+          limits:
+            memory: {{ .Values.application.memory.limit }}
+            cpu: {{ .Values.application.cpu.limit }}
+        ports:
+        - containerPort: {{ .Values.application.port }}
+          name: {{ template "fullname" . }}
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: {{ .Values.application.baseUrl }}{{ .Values.application.ready.path }}
+            port: {{ .Values.application.port }}
+            scheme: HTTP
+          inmitialDelaySeconds: 10
+          periodSeconds: {{.Values.application.ready.periodSeconds}}
+          successThreshold: 1
+          timeoutSeconds: 5
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: {{ .Values.application.baseUrl }}{{ .Values.application.live.path }}
+            port: {{ .Values.application.port }}
+            scheme: HTTP
+          inmitialDelaySeconds: 180
+          periodSeconds: {{.Values.application.live.periodSeconds}}
+          successThreshold: 1
+          timeoutSeconds: 5

@@ -1,0 +1,71 @@
+@Library('platform-jenkins-library') _
+
+node('master') {
+    def jenkins_github_id = "${env.JENKINS_GITHUB_CREDENTIALS_ID}"
+    def projectName       = "${env.PROJECT_NAME}"
+    def pipeline_version  = "1.0.0-b${env.BUILD_NUMBER}"
+    def namespace         = "a-q-api"
+    def github_commit     = ""
+
+    stage("Checkout"){
+        echo "git checkout"
+        checkout changelog: false, poll: false, scm: [
+            $class: 'GitSCM',
+            branches: [[
+                name: "feature_branch"
+            ]],
+            doGenerateSubmoduleConfigurations: false,
+            extensions: [[
+                $class: 'WipeWorkspace'
+            ], [
+                $class: 'CleanBeforeCheckout'
+            ]],
+            submoduleCfg: [],
+            userRemoteConfigs: [[
+                credentialsId: "${jenkins_github_id}",
+                url: "https://github.com/anthonydwilliams/infra-engineer-test-master.git"
+            ]]
+        ]
+    }
+    stage("Preprod Terraform Plan"){
+        docker.image('894093897567.dkr.ecr.eu-west-1.amazonaws.com/platforms-deploy-tools:latest').inside() {
+            withAWS(credentials: 'aws-credentials', region: 'eu-west-1') {
+            sh """
+                cd infrastructure/terraform/
+                terraform init -backend-config "bucket=platforms-terraform-state-preprod"
+                terraform plan -out=tfplan -var-file=environments/production.tfvars
+            """
+                }
+            }
+        }
+    stage("Preprod Terraform Deploy"){
+        timeout(time: 300, unit: 'SECONDS') {
+            input(message: "Do you want to proceed deployment to EKS Cluster?")
+            }  
+        }
+
+        docker.image('894093897567.dkr.ecr.eu-west-1.amazonaws.com/mycar-deploy-tools:latest').inside() {
+            withAWS(credentials: 'aws-credentials', region: 'eu-west-1') {
+                sh """
+                    cd infrastructure/terraform/
+                    terraform apply "tfplan"
+                """
+            }
+        }
+    stage('Build image') {
+        docker.withRegistry('https://eu.gcr.io', 'gcr:tmg-platforms-preprod') {
+            sh "echo APP_NAME=${projectName} APP_VERSION=${pipeline_version}"
+            app_preprod = docker.build("894093897567.dkr.ecr.eu-west-1.amazonaws.com/${projectName}:${pipeline_version}", "--build-arg APP_NAME=${projectName} --build-arg APP_VERSION=${pipeline_version} .")
+            app_preprod.push("${pipeline_version}")
+            app_preprod.push("latest")
+        }
+    }
+    stage("Prod Deploy"){
+        docker.image('894093897567.dkr.ecr.eu-west-1.amazonaws.com/platforms-deploy-tools:latest').inside('-u root -v /var/run/docker.sock:/var/run/docker.sock') {
+            sh """
+                cd infrastructure/helm/chart/
+                helm dependancy update .
+                helm upgrade --force -i --namespace ${namespace} ${env.PROJECT_NAME} --set image.tag=${pipeline_version} . -f ../environments/preprod.yaml
+            """
+        }
+    }
