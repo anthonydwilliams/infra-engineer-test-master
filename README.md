@@ -20,4 +20,4 @@ air_quality_api deployment for mycar
 
 * Architecture Diagram
   * Proposed Solution
-  ![Authentication diagram](authenticateUserAppleNewsAuth.png)
+  ![Authentication diagram](Architect-Diagram.png)
