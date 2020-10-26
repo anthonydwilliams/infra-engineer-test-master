@@ -3,13 +3,13 @@ variable "host-name" {
 }
 variable "port" {
   default = 5432
-  description = "Project that infrastructure will be built in"
+  description = "Database Port"
 }
 variable "database" {
-  description = "Project that infrastructure will be built in"
+  description = "This is the database that will be in use"
 }
 variable "user-name" {
-  description = "Project that infrastructure will be built in"
+  description = "DB username"
 }
 variable "password" {
   description = "Project that infrastructure will be built in"

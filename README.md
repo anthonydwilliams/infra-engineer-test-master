@@ -3,12 +3,12 @@ air_quality_api deployment for mycar
 
 # infrastructure
 
-1. Air quality api will be deployed on EKS production cluster.
-2. It will be deployed as an Helm package.
-3. the script to deploy wordpress will be in a Git and the build will be Jenkins.
-4. postgres will built as an AWS Managed Service.
-5. Postgres will be created via terraform that is also in our repo and will be built in the Jenkins file.
-6. postgres will have periodic snapshots taken for backups which is also written into the code.
+1. Air quality api will be deployed on a EKS production cluster.
+2. The deployment will be done as an Helm package.
+3. Script to deploy the api will be in Git and the build will be done by Jenkins.
+4. Postgres is going to be a AWS Managed Service.
+5. The DB creation is via terraform and code will also be in Git repo.
+6. DB will have periodic snapshots taken for backups which is also written into the code.
 7. nginx ingress controller will be deployed as dependancies for this project.
 8. The Cert cluster issuer will be letsencrypt.
 
